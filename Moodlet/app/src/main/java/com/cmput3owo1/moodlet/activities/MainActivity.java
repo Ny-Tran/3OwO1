@@ -10,8 +10,19 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    RecyclerView historyRecyclerView;
+    RecyclerView.Adapter historyAdapter;
+    RecyclerView.LayoutManager historyLayoutManager;
+
+    List<String> moodhistoryDataSet = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +38,21 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(navView, navController);
+
+
+        for(int i = 0; i < 10; i++) {
+            moodhistoryDataSet.add("Mood history " + Integer.toString(i+1));
+        }
+
+        historyLayoutManager = new LinearLayoutManager(this);
+        historyAdapter = new historyAdapter(moodhistoryDataSet);
+
+        historyRecyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+        historyRecyclerView.setLayoutManager(historyLayoutManager);
+        historyRecyclerView.setAdapter(historyAdapter);
+
+
+
     }
 
 }
