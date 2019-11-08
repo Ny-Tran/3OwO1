@@ -3,14 +3,19 @@ package com.cmput3owo1.moodlet.activities;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.view.View;
 
 import com.cmput3owo1.moodlet.R;
 import com.cmput3owo1.moodlet.fragments.LoginFragment;
 
-
+/**
+ *  Activity that holds the login and registration fragments
+ */
 public class LoginActivity extends AppCompatActivity {
 
+    /**
+     * Called when the activity is starting.
+     * @param savedInstanceState Used to restore an activity's previous state
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

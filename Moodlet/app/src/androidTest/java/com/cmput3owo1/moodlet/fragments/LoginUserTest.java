@@ -1,4 +1,4 @@
-package com.cmput3owo1.moodlet.activities;
+package com.cmput3owo1.moodlet.fragments;
 
 import androidx.test.espresso.ViewInteraction;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -6,6 +6,7 @@ import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
 
 import com.cmput3owo1.moodlet.R;
+import com.cmput3owo1.moodlet.activities.LoginActivity;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +24,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.not;
 
-/*
+/**
  * This tests for proper user login and failed user login with wrong
  * credentials and missing fields
  */

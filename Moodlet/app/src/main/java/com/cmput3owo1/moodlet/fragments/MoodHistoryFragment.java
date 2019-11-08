@@ -1,5 +1,6 @@
 package com.cmput3owo1.moodlet.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,9 +12,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.cmput3owo1.moodlet.R;
+import com.cmput3owo1.moodlet.activities.MoodEditorActivity;
 import com.cmput3owo1.moodlet.adapters.MoodEventAdapter;
 import com.cmput3owo1.moodlet.models.MoodEvent;
+import com.cmput3owo1.moodlet.services.IMoodEventServiceProvider;
 import com.cmput3owo1.moodlet.services.MoodEventService;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 
@@ -22,12 +26,13 @@ import java.util.ArrayList;
  * and time sorted in reverse chronological order of each mood event.
  */
 public class MoodHistoryFragment extends Fragment
-        implements MoodEventAdapter.OnItemClickListener, MoodEventService.OnMoodHistoryUpdateListener {
+        implements MoodEventAdapter.OnItemClickListener, IMoodEventServiceProvider.OnMoodHistoryUpdateListener {
 
     private RecyclerView recyclerView;
     private MoodEventAdapter recyclerAdapter;
     private ArrayList<MoodEvent> moodEventList;
-    private MoodEventService moodEventService;
+    private IMoodEventServiceProvider moodEventService;
+    private FloatingActionButton addMood;
 
 
     /**
@@ -53,6 +58,16 @@ public class MoodHistoryFragment extends Fragment
         moodEventService = new MoodEventService();
         moodEventService.getMoodHistoryUpdates(this);
 
+        addMood = view.findViewById(R.id.add_mood_fab);
+        addMood.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), MoodEditorActivity.class);
+                intent.putExtra("add",true);
+                startActivity(intent);
+            }
+        });
+
         return view;
     }
 
@@ -63,6 +78,12 @@ public class MoodHistoryFragment extends Fragment
     @Override
     public void onItemClick(int pos) {
         // Implement for editing a mood event
+        MoodEvent selected = moodEventList.get(pos);
+        Intent intent = new Intent(getActivity(), MoodEditorActivity.class);
+        intent.putExtra("MoodEvent",selected);
+        intent.putExtra("date",selected.getDate());
+        intent.putExtra("view",true);
+        startActivity(intent);
     }
 
     /**
@@ -76,3 +97,4 @@ public class MoodHistoryFragment extends Fragment
         recyclerAdapter.notifyDataSetChanged();
     }
 }
+

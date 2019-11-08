@@ -1,5 +1,7 @@
 package com.cmput3owo1.moodlet.services;
 
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -7,6 +9,8 @@ import com.cmput3owo1.moodlet.models.EmotionalState;
 import com.cmput3owo1.moodlet.models.MoodEvent;
 import com.cmput3owo1.moodlet.models.MoodEventAssociation;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
@@ -16,6 +20,9 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 
@@ -24,23 +31,11 @@ import java.util.ArrayList;
  * It handles everything to do with MoodEvents and their interaction with the database. This
  * includes adding, deleting, editing, and querying.
  */
-public class MoodEventService {
+public class MoodEventService implements IMoodEventServiceProvider {
     private FirebaseFirestore db;
     private FirebaseAuth auth;
-
-    /**
-     * Listener interface to get the new feed (MoodEvents of users you are following) upon an update
-     */
-    public interface OnFeedUpdateListener {
-        void onFeedUpdate(ArrayList<MoodEventAssociation> newFeed);
-    }
-
-    /**
-     * Listener interface to get the new mood history upon an update
-     */
-    public interface OnMoodHistoryUpdateListener {
-        void onMoodHistoryUpdate(ArrayList<MoodEvent> newHistory);
-    }
+    private StorageReference storageRef;
+    private FirebaseStorage storage;
 
     /**
      * Default constructor for MoodEventService.
@@ -48,6 +43,8 @@ public class MoodEventService {
     public MoodEventService() {
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
     }
 
     /**
@@ -55,6 +52,7 @@ public class MoodEventService {
      * feed when a change occurs.
      * @param listener The listener to pass the new feed to
      */
+    @Override
     public void getFeedUpdates(final OnFeedUpdateListener listener) {
         String username = auth.getCurrentUser().getDisplayName();
 
@@ -76,16 +74,19 @@ public class MoodEventService {
 
     /**
      * Add a Mood Event to the database.
-     * @param moodEvent The mood event to add
+     * @param moodEvent The {@link MoodEvent} to add to the database.
+     * @param listener The listener to notify upon completion of add.
      */
-    public void addMoodEvent(final MoodEvent moodEvent) {
+    @Override
+    public String addMoodEvent(final MoodEvent moodEvent, OnMoodUpdateListener listener) {
         DocumentReference newMoodEventRef = db.collection("moodEvents").document();
         newMoodEventRef.set(moodEvent);
 
         final String username = auth.getCurrentUser().getDisplayName();
         newMoodEventRef.update("username", username);
+        newMoodEventRef.update("id", newMoodEventRef.getId());
 
-        Query followersQuery = db.collection(username + "/followers");
+        Query followersQuery = db.collection("users/" + username + "/followers");
         followersQuery.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
@@ -101,6 +102,25 @@ public class MoodEventService {
                 }
             }
         });
+        listener.onMoodUpdateSuccess();
+        return newMoodEventRef.getId();
+    }
+
+    /**
+     * Edit an existing MoodEvent on the database.
+     * @param moodEvent The {@link MoodEvent} to edit.
+     * @param listener The listener to notify upon completion of edit.
+     */
+    @Override
+    public void editMoodEvent(MoodEvent moodEvent, OnMoodUpdateListener listener){
+        DocumentReference newMoodEventRef = db.collection("moodEvents").document(moodEvent.getId());
+        newMoodEventRef.set(moodEvent);
+
+        final String username = auth.getCurrentUser().getDisplayName();
+        newMoodEventRef.update("username", username);
+
+        listener.onMoodUpdateSuccess();
+
     }
 
     /**
@@ -108,6 +128,7 @@ public class MoodEventService {
      * method with the new mood history list when a change occurs.
      * @param listener The listener to pass the new mood history list to
      */
+    @Override
     public void getMoodHistoryUpdates(OnMoodHistoryUpdateListener listener) {
         String username = auth.getCurrentUser().getDisplayName();
 
@@ -124,6 +145,7 @@ public class MoodEventService {
      * @param listener The listener to pass the new mood history list to
      * @param filterBy The {@link EmotionalState} to filter the list by.
      */
+    @Override
     public void getMoodHistoryUpdates(OnMoodHistoryUpdateListener listener, EmotionalState filterBy) {
         String username = auth.getCurrentUser().getDisplayName();
 
@@ -148,5 +170,34 @@ public class MoodEventService {
             }
         });
     }
+    /**
+     * Listen to mood history updates of the current user. Calls the listener's onMoodHistoryUpdate
+     * method with the new mood history list when a change occurs.
+     * @param listener The listener to pass the new mood history list to
+     * @param imageToUpload The Uri to upload to FireBase.
+     */
+    @Override
+    public void uploadImage(final OnImageUploadListener listener, final Uri imageToUpload){
+
+        final String username = auth.getCurrentUser().getDisplayName();
+        final String filepath = "images/" + username + "/" + imageToUpload.getLastPathSegment();
+
+        StorageReference filepathRef = storageRef.child(filepath);
+
+        filepathRef.putFile(imageToUpload).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                listener.onImageUploadFailure();
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                listener.onImageUploadSuccess(filepath);
+
+            }
+        });
+
+    }
 
 }
+
