@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,14 +44,32 @@ public class MoodHistoryFragment extends Fragment implements MoodEventAdapter.On
             moodEventList.add((new MoodEvent(emotions[i])));
         }
 
+        new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);
+
         recyclerAdapter = new MoodEventAdapter(moodEventList, this);
         recyclerView.setAdapter(recyclerAdapter);
 
+
         return view;
+
+
     }
 
     @Override
     public void onItemClick(int pos) {
         // Implement for editing a mood event
     }
+
+    ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            return false;
+        }
+
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            moodEventList.remove(viewHolder.getAdapterPosition());
+            recyclerAdapter.notifyDataSetChanged();
+        }
+    };
 }
